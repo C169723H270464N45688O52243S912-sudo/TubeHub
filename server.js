@@ -39,10 +39,8 @@ app.post("/api/youtube/connect", async (req, res) => {
       });
     }
 
-    const appUrl = (
-      process.env.APP_URL ||
-      `https://${req.get("host")}`
-    ).replace(/\/$/, "");
+    const appUrl =
+  "https://shiny-space-garbanzo-p7wrqg456rw5296jp-3000.app.github.dev";
 
     const callbackUrl = `${appUrl}/auth/callback`;
 
