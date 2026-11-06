@@ -1,14 +1,16 @@
-const { randomUUID } = require("crypto");
-
-const authSessions = new Map();
 
 const express = require("express");
+const { randomUUID } = require("crypto");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const APP_URL =
+  "https://shiny-space-garbanzo-p7wrqg456rw5296jp-3000.app.github.dev";
+
+const authSessions = new Map();
+
 app.use((req, res, next) => {
-  // Helps preserve communication between the popup and TubeHub.
   res.setHeader(
     "Cross-Origin-Opener-Policy",
     "same-origin-allow-popups"
@@ -19,7 +21,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Check whether Composio secrets are configured.
+// Check whether Composio secrets exist.
 app.get("/api/youtube/connection", (req, res) => {
   res.json({
     configured: Boolean(
@@ -29,7 +31,7 @@ app.get("/api/youtube/connection", (req, res) => {
   });
 });
 
-// Create the Composio authorization link.
+// Create a YouTube authorization link.
 app.post("/api/youtube/connect", async (req, res) => {
   try {
     const apiKey = process.env.COMPOSIO_API_KEY;
@@ -42,13 +44,10 @@ app.post("/api/youtube/connect", async (req, res) => {
       });
     }
 
-    const appUrl =
-  "https://shiny-space-garbanzo-p7wrqg456rw5296jp-3000.app.github.dev";
-
     const sessionId = randomUUID();
 
-const callbackUrl =
-  `${appUrl}/auth/callback?session=${sessionId}`;
+    const callbackUrl =
+      `${APP_URL}/auth/callback?session=${sessionId}`;
 
     const response = await fetch(
       "https://backend.composio.dev/api/v3.1/connected_accounts/link",
@@ -69,7 +68,7 @@ const callbackUrl =
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Composio error:", response.status);
+      console.error("Composio API error:", response.status);
 
       return res.status(502).json({
         error: "Composio could not create the connection link."
@@ -82,10 +81,11 @@ const callbackUrl =
       });
     }
 
+    // Successful response.
     res.json({
-  redirectUrl: data.redirect_url,
-  sessionId
-});
+      redirectUrl: data.redirect_url,
+      sessionId
+    });
 
   } catch (error) {
     console.error("Connection error:", error.message);
@@ -96,12 +96,24 @@ const callbackUrl =
   }
 });
 
-// Composio sends the popup here after authorization.
+// Check authorization progress.
+app.get("/api/youtube/status/:sessionId", (req, res) => {
+  const status = authSessions.get(req.params.sessionId);
+
+  res.json({
+    status: status || "pending"
+  });
+});
+
+// Receive the Composio callback.
 app.get("/auth/callback", (req, res) => {
   const sessionId = req.query.session;
   const status = req.query.status;
 
-  if (sessionId && (status === "success" || status === "failed")) {
+  if (
+    sessionId &&
+    (status === "success" || status === "failed")
+  ) {
     authSessions.set(sessionId, status);
   }
 
@@ -109,12 +121,43 @@ app.get("/auth/callback", (req, res) => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>TubeHub</title>
+      <title>TubeHub Connection</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body {
+          background: #0d0e11;
+          color: white;
+          font-family: Arial, sans-serif;
+          text-align: center;
+          padding: 80px 20px;
+        }
+
+        h2 {
+          color: #ff7138;
+        }
+      </style>
     </head>
-    <body style="background:#0d0e11;color:white;font-family:Arial;text-align:center;padding:80px">
-      <h2>${status === "success" ? "YouTube connected!" : "Connection finished."}</h2>
+    <body>
+      <h2 id="message">Finishing connection...</h2>
       <p>You can return to TubeHub.</p>
+
       <script>
+        const status = new URLSearchParams(
+          window.location.search
+        ).get("status");
+
+        document.getElementById("message").textContent =
+          status === "success"
+            ? "YouTube connected successfully!"
+            : "Connection was not completed.";
+
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage({
+            type: "tubehub-oauth-complete",
+            status: status
+          }, window.location.origin);
+        }
+
         setTimeout(() => window.close(), 1500);
       </script>
     </body>
@@ -122,10 +165,8 @@ app.get("/auth/callback", (req, res) => {
   `);
 });
 
-app.get("/api/youtube/status/:sessionId", (req, res) => {
-  const status = authSessions.get(req.params.sessionId);
-
-  res.json({
-    status: status || "pending"
-  });
+// Start server.
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`TubeHub running on port ${PORT}`);
+  console.log(`Public URL: ${APP_URL}`);
 });

@@ -1,5 +1,11 @@
 
 async function connectYouTube() {
+  const buttons = [
+    document.getElementById("connectButton"),
+    document.getElementById("welcomeConnect")
+  ];
+
+  // Open popup immediately to avoid popup blockers.
   const popup = window.open(
     "about:blank",
     "tubehub-auth",
@@ -7,21 +13,19 @@ async function connectYouTube() {
   );
 
   if (!popup) {
-    alert("did you just block the pop-up? shame on you. shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame");
+    alert("did you just block the popup? shame on you. shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame.");
     return;
   }
 
-  const buttons = [
-    document.getElementById("connectButton"),
-    document.getElementById("welcomeConnect")
-  ];
-
   buttons.forEach(button => {
-    button.disabled = true;
-    button.textContent = "Connecting...";
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Connecting...";
+    }
   });
 
   try {
+    // Request authorization link from TubeHub server.
     const response = await fetch("/api/youtube/connect", {
       method: "POST"
     });
@@ -32,31 +36,43 @@ async function connectYouTube() {
       throw new Error(data.error || "Connection failed.");
     }
 
+    if (!data.redirectUrl || !data.sessionId) {
+      throw new Error("Missing authorization information.");
+    }
+
+    // Open Composio inside the popup.
     popup.location.href = data.redirectUrl;
 
     const sessionId = data.sessionId;
     let attempts = 0;
 
+    // Check the server for authorization completion.
     const checkConnection = async () => {
-      if (attempts++ > 180) {
+      if (attempts++ >= 180) {
         throw new Error("Connection timed out. Please try again.");
       }
 
       const result = await fetch(
-        `/api/youtube/status/${sessionId}`
+        `/api/youtube/status/${encodeURIComponent(sessionId)}`
       );
+
+      if (!result.ok) {
+        throw new Error("Could not check connection status.");
+      }
 
       const statusData = await result.json();
 
       if (statusData.status === "success") {
         buttons.forEach(button => {
-          button.disabled = false;
-          button.textContent = "✓ YouTube Connected";
+          if (button) {
+            button.disabled = false;
+            button.textContent = "✓ YouTube Connected";
+          }
         });
 
         if (!popup.closed) popup.close();
 
-        alert("YouTube connected successfully!");
+        alert("YouTube authorization completed!");
         return;
       }
 
@@ -64,49 +80,47 @@ async function connectYouTube() {
         throw new Error("YouTube authorization failed.");
       }
 
-      setTimeout(checkConnection, 1000);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      return checkConnection();
     };
 
-    checkConnection();
+    await checkConnection();
 
   } catch (error) {
     if (!popup.closed) popup.close();
 
     buttons.forEach((button, index) => {
-      button.disabled = false;
-      button.textContent = index === 0
-        ? "▶ Connect YouTube"
-        : "Connect your account →";
+      if (button) {
+        button.disabled = false;
+        button.textContent = index === 0
+          ? "▶ Connect YouTube"
+          : "Connect your account →";
+      }
     });
 
     alert(error.message);
+    console.error("TubeHub connection error:", error);
   }
 }
 
-// Receive the result from the authorization popup.
+// Listen for popup messages as an additional notification.
 window.addEventListener("message", event => {
   if (event.origin !== window.location.origin) return;
 
   if (event.data?.type !== "tubehub-oauth-complete") return;
 
-  const success = event.data.status === "success";
+  if (event.data.status === "success") {
+    const button = document.getElementById("connectButton");
 
-  const connectButton = document.getElementById("connectButton");
-  const welcomeConnect = document.getElementById("welcomeConnect");
-
-  if (success) {
-    connectButton.textContent = "✓ YouTube Connected";
-    welcomeConnect.textContent = "Connected!";
-    alert("YouTube connected successfully!");
-  } else {
-    connectButton.disabled = false;
-    welcomeConnect.disabled = false;
-    connectButton.textContent = "▶ Connect YouTube";
-    welcomeConnect.textContent = "Connect your account →";
-    alert("YouTube authorization was not completed.");
+    if (button) {
+      button.textContent = "✓ YouTube Connected";
+      button.disabled = false;
+    }
   }
 });
 
+// Connect buttons.
 document.getElementById("connectButton")
   .addEventListener("click", connectYouTube);
 
