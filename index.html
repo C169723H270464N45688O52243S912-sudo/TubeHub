@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TubeHub</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span>▶</span> TubeHub</div>
+
+    <p class="nav-label">MENU</p>
+    <nav>
+      <a class="active" href="#home">⌂ Dashboard</a>
+      <a href="#subscriptions">▣ Subscriptions</a>
+      <a href="#liked">♥ Liked Videos</a>
+      <a href="#playlists">☷ Playlists</a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a href="#settings">⚙ Settings</a>
+      <div class="profile">
+        <div class="avatar">T</div>
+        <div><strong>TubeHub User</strong><small>YouTube account</small></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main" id="home">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">YOUR PERSONAL YOUTUBE SPACE</p>
+        <h1>Dashboard</h1>
+      </div>
+      <button id="connectButton" class="connect-button">▶ Connect YouTube</button>
+    </header>
+
+    <section class="welcome">
+      <div>
+        <p class="eyebrow">WELCOME TO TUBEHUB</p>
+        <h2>Your YouTube. <span>Your way.</span></h2>
+        <p>All your favorite videos, channels, and playlists in one place.</p>
+        <button class="primary-button" id="welcomeConnect">Connect your account →</button>
+      </div>
+      <div class="welcome-icon">▶</div>
+    </section>
+
+    <section class="stats">
+      <article class="stat-card">
+        <span>Subscriptions</span><strong id="subscriptionCount">—</strong><small>Your channels</small>
+      </article>
+      <article class="stat-card">
+        <span>Liked videos</span><strong id="likedCount">—</strong><small>Your favorites</small>
+      </article>
+      <article class="stat-card">
+        <span>Playlists</span><strong id="playlistCount">—</strong><small>Your collections</small>
+      </article>
+    </section>
+
+    <section class="section" id="subscriptions">
+      <div class="section-heading">
+        <div><p class="eyebrow">YOUR CHANNELS</p><h2>Subscriptions</h2></div>
+        <a href="#subscriptions">View all →</a>
+      </div>
+      <div class="empty-state">
+        <div class="empty-icon">▣</div>
+        <h3>Your subscriptions will appear here</h3>
+        <p>Connect your YouTube account to get started.</p>
+      </div>
+    </section>
+
+    <section class="section" id="liked">
+      <div class="section-heading">
+        <div><p class="eyebrow">YOUR FAVORITES</p><h2>Liked videos</h2></div>
+      </div>
+      <div class="empty-state">
+        <div class="empty-icon">♥</div>
+        <h3>Your liked videos will appear here</h3>
+        <p>Your favorite videos, all together.</p>
+      </div>
+    </section>
+
+    <section class="section" id="playlists">
+      <div class="section-heading">
+        <div><p class="eyebrow">YOUR COLLECTIONS</p><h2>Playlists</h2></div>
+      </div>
+      <div class="empty-state">
+        <div class="empty-icon">☷</div>
+        <h3>Your playlists will appear here</h3>
+        <p>Keep your collections organized.</p>
+      </div>
+    </section>
+
+    <footer>TubeHub · Your personal YouTube dashboard</footer>
+  </main>
+</body>
+</html>
