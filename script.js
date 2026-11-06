@@ -1,14 +1,13 @@
 
 async function connectYouTube() {
-  // Open the popup immediately during the button click.
   const popup = window.open(
     "about:blank",
-    "tubehub-composio-auth",
+    "tubehub-auth",
     "popup=yes,width=520,height=720"
   );
 
   if (!popup) {
-    alert("the fucking popup was blocked. disable ur blocker mf and try again never.");
+    alert("did you just block the pop-up? shame on you. shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame shame");
     return;
   }
 
@@ -33,16 +32,45 @@ async function connectYouTube() {
       throw new Error(data.error || "Connection failed.");
     }
 
-    if (!data.redirectUrl) {
-      throw new Error("No authorization link was returned.");
-    }
-
-    // Send the popup to Composio instead of redirecting TubeHub.
     popup.location.href = data.redirectUrl;
 
+    const sessionId = data.sessionId;
+    let attempts = 0;
+
+    const checkConnection = async () => {
+      if (attempts++ > 180) {
+        throw new Error("Connection timed out. Please try again.");
+      }
+
+      const result = await fetch(
+        `/api/youtube/status/${sessionId}`
+      );
+
+      const statusData = await result.json();
+
+      if (statusData.status === "success") {
+        buttons.forEach(button => {
+          button.disabled = false;
+          button.textContent = "✓ YouTube Connected";
+        });
+
+        if (!popup.closed) popup.close();
+
+        alert("YouTube connected successfully!");
+        return;
+      }
+
+      if (statusData.status === "failed") {
+        throw new Error("YouTube authorization failed.");
+      }
+
+      setTimeout(checkConnection, 1000);
+    };
+
+    checkConnection();
+
   } catch (error) {
-    popup.close();
-    alert(error.message);
+    if (!popup.closed) popup.close();
 
     buttons.forEach((button, index) => {
       button.disabled = false;
@@ -50,6 +78,8 @@ async function connectYouTube() {
         ? "▶ Connect YouTube"
         : "Connect your account →";
     });
+
+    alert(error.message);
   }
 }
 
