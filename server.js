@@ -1,3 +1,6 @@
+const { randomUUID } = require("crypto");
+
+const authSessions = new Map();
 
 const express = require("express");
 
@@ -42,7 +45,10 @@ app.post("/api/youtube/connect", async (req, res) => {
     const appUrl =
   "https://shiny-space-garbanzo-p7wrqg456rw5296jp-3000.app.github.dev";
 
-    const callbackUrl = `${appUrl}/auth/callback`;
+    const sessionId = randomUUID();
+
+const callbackUrl =
+  `${appUrl}/auth/callback?session=${sessionId}`;
 
     const response = await fetch(
       "https://backend.composio.dev/api/v3.1/connected_accounts/link",
