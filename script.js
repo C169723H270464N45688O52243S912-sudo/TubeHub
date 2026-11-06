@@ -1,5 +1,17 @@
 
 async function connectYouTube() {
+  // Open the popup immediately during the button click.
+  const popup = window.open(
+    "about:blank",
+    "tubehub-composio-auth",
+    "popup=yes,width=520,height=720"
+  );
+
+  if (!popup) {
+    alert("the fucking popup was blocked. disable ur blocker mf and try again never.");
+    return;
+  }
+
   const buttons = [
     document.getElementById("connectButton"),
     document.getElementById("welcomeConnect")
@@ -22,12 +34,14 @@ async function connectYouTube() {
     }
 
     if (!data.redirectUrl) {
-      throw new Error("Composio did not return an authorization link.");
+      throw new Error("No authorization link was returned.");
     }
 
-    window.location.href = data.redirectUrl;
+    // Send the popup to Composio instead of redirecting TubeHub.
+    popup.location.href = data.redirectUrl;
 
   } catch (error) {
+    popup.close();
     alert(error.message);
 
     buttons.forEach((button, index) => {
@@ -38,6 +52,30 @@ async function connectYouTube() {
     });
   }
 }
+
+// Receive the result from the authorization popup.
+window.addEventListener("message", event => {
+  if (event.origin !== window.location.origin) return;
+
+  if (event.data?.type !== "tubehub-oauth-complete") return;
+
+  const success = event.data.status === "success";
+
+  const connectButton = document.getElementById("connectButton");
+  const welcomeConnect = document.getElementById("welcomeConnect");
+
+  if (success) {
+    connectButton.textContent = "✓ YouTube Connected";
+    welcomeConnect.textContent = "Connected!";
+    alert("YouTube connected successfully!");
+  } else {
+    connectButton.disabled = false;
+    welcomeConnect.disabled = false;
+    connectButton.textContent = "▶ Connect YouTube";
+    welcomeConnect.textContent = "Connect your account →";
+    alert("YouTube authorization was not completed.");
+  }
+});
 
 document.getElementById("connectButton")
   .addEventListener("click", connectYouTube);
